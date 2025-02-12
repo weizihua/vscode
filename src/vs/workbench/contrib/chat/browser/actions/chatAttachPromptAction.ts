@@ -8,12 +8,12 @@ import { localize2 } from '../../../../../nls.js';
 import { assertDefined } from '../../../../../base/common/types.js';
 import { IChatWidget, showChatView, showEditsView } from '../chat.js';
 import { Action2 } from '../../../../../platform/actions/common/actions.js';
+import { IPromptsService } from '../../common/promptSyntax/service/types.js';
 import { ILabelService } from '../../../../../platform/label/common/label.js';
 import { IOpenerService } from '../../../../../platform/opener/common/opener.js';
 import { IViewsService } from '../../../../services/views/common/viewsService.js';
 import { ServicesAccessor } from '../../../../../editor/browser/editorExtensions.js';
 import { IQuickInputService } from '../../../../../platform/quickinput/common/quickInput.js';
-import { IInstantiationService } from '../../../../../platform/instantiation/common/instantiation.js';
 import { ISelectPromptOptions, showSelectPromptDialog } from './chatAttachPromptAction/showPromptSelectionDialog.js';
 
 /**
@@ -48,15 +48,15 @@ export class AttachPromptAction extends Action2 {
 		const labelService = accessor.get(ILabelService);
 		const viewsService = accessor.get(IViewsService);
 		const openerService = accessor.get(IOpenerService);
-		const initService = accessor.get(IInstantiationService);
+		const promptsService = accessor.get(IPromptsService);
 		const quickInputService = accessor.get(IQuickInputService);
 
 		const selectionResult = await showSelectPromptDialog({
 			...options,
-			initService,
 			labelService,
-			quickInputService,
 			openerService,
+			promptsService,
+			quickInputService,
 		});
 
 		// no prompt selected, nothing to do

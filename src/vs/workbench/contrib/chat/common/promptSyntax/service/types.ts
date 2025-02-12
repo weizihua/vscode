@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { URI } from '../../../../../../base/common/uri.js';
 import { ITextModel } from '../../../../../../editor/common/model.js';
 import { IDisposable } from '../../../../../../base/common/lifecycle.js';
 import { TextModelPromptParser } from '../parsers/textModelPromptParser.js';
@@ -28,4 +29,44 @@ export interface IPromptSyntaxService extends IDisposable {
 	getParserFor(
 		model: ITextModel,
 	): TextModelPromptParser & { disposed: false };
+}
+
+/**
+ * Provides prompt services.
+ */
+export const IPromptsService = createDecorator<IPromptsService>('IPromptsService');
+
+/**
+ * Provides prompt services.
+ */
+export interface IPromptsService extends IDisposable {
+	readonly _serviceBrand: undefined;
+
+	/**
+	 * Location of the `global` prompts.
+	 */
+	readonly globalPromptsLocation: URI;
+
+	/**
+	 * TODO: @legomushroom
+	 */
+	listLocalPrompts(): Promise<readonly URI[]>;
+
+	/**
+	 * TODO: @legomushroom
+	 */
+	listGlobalPrompts(): Promise<readonly URI[]>;
+
+	/**
+	 * TODO: @legomushroom
+	 */
+	listAllPrompts(): Promise<readonly URI[]>;
+
+	/**
+	 * TODO: @legomushroom
+	 */
+	createPrompt(
+		promptUri: URI,
+		content: string,
+	): Promise<this>;
 }
