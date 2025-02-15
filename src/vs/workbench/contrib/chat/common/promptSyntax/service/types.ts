@@ -52,9 +52,9 @@ export interface IPromptsService extends IDisposable {
 	): TextModelPromptParser & { disposed: false };
 
 	/**
-	 * List all available prompt files.
+	 * List all available prompt files. Default value is `all`.
 	 */
-	listPromptFiles(): Promise<readonly IPromptPath[]>;
+	listPromptFiles(type?: TPromptsType | 'all'): Promise<readonly IPromptPath[]>;
 
 	/**
 	 * Get a list of prompt source folders based on the provided prompt type.

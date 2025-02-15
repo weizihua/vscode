@@ -81,16 +81,29 @@ export class PromptsService extends Disposable implements IPromptsService {
 		return this.cache.get(model);
 	}
 
-	public async listPromptFiles(): Promise<readonly IPromptPath[]> {
-		const globalLocations = [this.userDataService.currentProfile.promptsHome];
+	public async listPromptFiles(
+		type: 'local' | 'global' | 'all' = 'all',
+	): Promise<readonly IPromptPath[]> {
+		const promises = [];
 
-		const prompts = await Promise.all([
-			this.fileLocator.listFilesIn(globalLocations, [])
-				.then(withType('global')),
-			this.fileLocator.listFiles([])
-				.then(withType('local')),
-		]);
+		if (type === 'local' || type === 'all') {
+			promises.push(
+				this.fileLocator.listFiles([])
+					.then(withType('local')),
+			);
+		}
 
+		if (type === 'global' || type === 'all') {
+			const globalPromptsSourceFolders = this.getSourceFolders('global')
+				.map(pick('uri'));
+
+			promises.push(
+				this.fileLocator.listFilesIn(globalPromptsSourceFolders, [])
+					.then(withType('global')),
+			);
+		}
+
+		const prompts = await Promise.all(promises);
 		return prompts.flat();
 	}
 
@@ -111,6 +124,17 @@ export class PromptsService extends Disposable implements IPromptsService {
 		return prompts.map(addType(type));
 	}
 }
+
+/**
+ * TODO: @legomushroom
+ */
+const pick = <TObject extends object, TProperty extends keyof TObject>(
+	propertyName: TProperty,
+): (object: TObject) => TObject[TProperty] => {
+	return (object: TObject) => {
+		return object[propertyName];
+	};
+};
 
 /**
  * Utility to add a provided prompt `type` to a prompt URI.

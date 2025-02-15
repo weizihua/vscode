@@ -15,6 +15,7 @@ import { ISyncData, ISyncResourceHandle, IUserData, IUserDataSyncLocalStoreServi
 import { IUserDataProfile, IUserDataProfilesService } from '../../userDataProfile/common/userDataProfile.js';
 import { isSyncData } from './abstractSynchronizer.js';
 import { parseSnippets } from './snippetsSync.js';
+import { parsePrompts } from './promptsSync/utils/parsePrompts.js';
 import { parseSettingsSyncContent } from './settingsSync.js';
 import { getKeybindingsContentFromSyncContent } from './keybindingsSync.js';
 import { IConfigurationService } from '../../configuration/common/configuration.js';
@@ -145,6 +146,7 @@ export class UserDataSyncResourceProviderService implements IUserDataSyncResourc
 			case SyncResource.Keybindings: return this.getKeybindingsAssociatedResources(uri, profile);
 			case SyncResource.Tasks: return this.getTasksAssociatedResources(uri, profile);
 			case SyncResource.Snippets: return this.getSnippetsAssociatedResources(uri, profile);
+			case SyncResource.Prompts: return this.getPromptsAssociatedResources(uri, profile);
 			case SyncResource.GlobalState: return this.getGlobalStateAssociatedResources(uri, profile);
 			case SyncResource.Extensions: return this.getExtensionsAssociatedResources(uri, profile);
 			case SyncResource.Profiles: return this.getProfilesAssociatedResources(uri, profile);
@@ -222,6 +224,7 @@ export class UserDataSyncResourceProviderService implements IUserDataSyncResourc
 			case SyncResource.Keybindings: return this.resolveKeybindingsNodeContent(syncData, node);
 			case SyncResource.Tasks: return this.resolveTasksNodeContent(syncData, node);
 			case SyncResource.Snippets: return this.resolveSnippetsNodeContent(syncData, node);
+			case SyncResource.Prompts: return this.resolvePromptsNodeContent(syncData, node);
 			case SyncResource.GlobalState: return this.resolveGlobalStateNodeContent(syncData, node);
 			case SyncResource.Extensions: return this.resolveExtensionsNodeContent(syncData, node);
 			case SyncResource.Profiles: return this.resolveProfileNodeContent(syncData, node);
@@ -242,6 +245,7 @@ export class UserDataSyncResourceProviderService implements IUserDataSyncResourc
 			case SyncResource.Keybindings: return null;
 			case SyncResource.Tasks: return null;
 			case SyncResource.Snippets: return null;
+			case SyncResource.Prompts: return null;
 			case SyncResource.WorkspaceState: return null;
 		}
 	}
@@ -324,6 +328,36 @@ export class UserDataSyncResourceProviderService implements IUserDataSyncResourc
 			})
 			: this.extUri.joinPath(uri, UserDataSyncResourceProviderService.NOT_EXISTING_RESOURCE);
 		return [{ resource, comparableResource }];
+	}
+
+	/**
+	 * TODO: @lego
+	 */
+	private async getPromptsAssociatedResources(
+		uri: URI, profile: IUserDataProfile | undefined,
+	): Promise<{ resource: URI; comparableResource: URI }[]> {
+		const content = await this.resolveContent(uri);
+		if (content) {
+			const syncData = this.parseSyncData(content, SyncResource.Prompts);
+			if (syncData) {
+				const prompts = parsePrompts(syncData);
+				const result = [];
+				for (const prompt of Object.keys(prompts)) {
+					const resource = this.extUri.joinPath(uri, prompt);
+					const comparableResource = profile ? this.extUri.joinPath(profile.promptsHome, prompt) : this.extUri.joinPath(uri, UserDataSyncResourceProviderService.NOT_EXISTING_RESOURCE);
+					result.push({ resource, comparableResource });
+				}
+				return result;
+			}
+		}
+		return [];
+	}
+
+	/**
+	 * TODO: @lego
+	 */
+	private resolvePromptsNodeContent(syncData: ISyncData, node: string): string | null {
+		return parsePrompts(syncData)[node] || null;
 	}
 
 	private resolveExtensionsNodeContent(syncData: ISyncData, node: string): string | null {
