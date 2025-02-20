@@ -7,16 +7,22 @@ import { localize } from '../../../../../../../nls.js';
 import { createPromptFile } from './utils/createPromptFile.js';
 import { CHAT_CATEGORY } from '../../../actions/chatActions.js';
 import { askForPromptName } from './dialogs/askForPromptName.js';
+import { Disposable } from '../../../../../../../base/common/lifecycle.js';
 import { askForPromptSourceFolder } from './dialogs/askForPromptSourceFolder.js';
 import { IFileService } from '../../../../../../../platform/files/common/files.js';
 import { ILabelService } from '../../../../../../../platform/label/common/label.js';
+import { Registry } from '../../../../../../../platform/registry/common/platform.js';
 import { IOpenerService } from '../../../../../../../platform/opener/common/opener.js';
+import { PromptsConfig } from '../../../../../../../platform/prompts/common/config.js';
+import { LifecyclePhase } from '../../../../../../services/lifecycle/common/lifecycle.js';
+import { CommandsRegistry } from '../../../../../../../platform/commands/common/commands.js';
 import { IPromptPath, IPromptsService } from '../../../../common/promptSyntax/service/types.js';
 import { appendToCommandPalette } from '../../../../../files/browser/fileActions.contribution.js';
 import { IQuickInputService } from '../../../../../../../platform/quickinput/common/quickInput.js';
 import { ServicesAccessor } from '../../../../../../../platform/instantiation/common/instantiation.js';
 import { IWorkspaceContextService } from '../../../../../../../platform/workspace/common/workspace.js';
-import { KeybindingsRegistry, KeybindingWeight } from '../../../../../../../platform/keybinding/common/keybindingsRegistry.js';
+import { IWorkbenchContributionsRegistry, Extensions } from '../../../../../../common/contributions.js';
+import { IConfigurationService } from '../../../../../../../platform/configuration/common/configuration.js';
 
 /**
  * Base command ID prefix.
@@ -99,41 +105,66 @@ const commandFactory = (type: 'local' | 'global') => {
 };
 
 /**
- * Register the "Create Local Prompt" command.
+ * TODO: @legomushroom
  */
-KeybindingsRegistry.registerCommandAndKeybindingRule({
-	id: LOCAL_COMMAND_ID,
-	weight: KeybindingWeight.WorkbenchContrib,
-	handler: commandFactory('local'),
-});
+// TODO: @legomushroom - subscribe to config change events?
+export class CreatePromptCommand extends Disposable {
+	constructor(
+		@IConfigurationService private readonly configService: IConfigurationService,
+	) {
+		super();
 
-/**
- * Register the "Create Global Prompt" command.
- */
-KeybindingsRegistry.registerCommandAndKeybindingRule({
-	id: GLOBAL_COMMAND_ID,
-	weight: KeybindingWeight.WorkbenchContrib,
-	handler: commandFactory('global'),
-});
+		this.registerIfEnabled();
+	}
 
-/**
- * Register the "Create Local Prompt" command in the command palette.
- */
-appendToCommandPalette(
-	{
-		id: LOCAL_COMMAND_ID,
-		title: LOCAL_COMMAND_TITLE,
-		category: CHAT_CATEGORY,
-	},
-);
+	/**
+	 * TODO: @legomushroom
+	 */
+	private registerIfEnabled(): void {
+		if (!PromptsConfig.enabled(this.configService)) {
+			return;
+		}
 
-/**
- * Register the "Create Global Prompt" command in the command palette.
- */
-appendToCommandPalette(
-	{
-		id: GLOBAL_COMMAND_ID,
-		title: GLOBAL_COMMAND_TITLE,
-		category: CHAT_CATEGORY,
-	},
-);
+		/**
+		 * Register the "Create Prompt" command.
+		 */
+		this._register(CommandsRegistry.registerCommand({
+			id: LOCAL_COMMAND_ID,
+			handler: commandFactory('local'),
+		}));
+
+		/**
+		 * Register the "Create Global Prompt" command.
+		 */
+		this._register(CommandsRegistry.registerCommand({
+			id: GLOBAL_COMMAND_ID,
+			handler: commandFactory('global'),
+		}));
+
+		/**
+		 * Register the "Create Prompt" command in the command palette.
+		 */
+		appendToCommandPalette(
+			{
+				id: LOCAL_COMMAND_ID,
+				title: LOCAL_COMMAND_TITLE,
+				category: CHAT_CATEGORY,
+			},
+		);
+
+		/**
+		 * Register the "Create Global Prompt" command in the command palette.
+		 */
+		appendToCommandPalette(
+			{
+				id: GLOBAL_COMMAND_ID,
+				title: GLOBAL_COMMAND_TITLE,
+				category: CHAT_CATEGORY,
+			},
+		);
+	}
+}
+
+// register the command as a workbench contribution
+Registry.as<IWorkbenchContributionsRegistry>(Extensions.Workbench)
+	.registerWorkbenchContribution(CreatePromptCommand, LifecyclePhase.Eventually);

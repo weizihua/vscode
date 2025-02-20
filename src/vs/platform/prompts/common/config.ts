@@ -119,7 +119,17 @@ export namespace PromptsConfig {
 	): boolean => {
 		const value = getValue(configService);
 
-		return value !== undefined;
+		// TODO: @legomushroom
+		if (!value || Array.isArray(value)) {
+			return false;
+		}
+
+		const enabledPaths = Object.entries(value)
+			.filter(([path, enabled]) => {
+				return path && asBoolean(enabled);
+			});
+
+		return enabledPaths.length > 0;
 	};
 
 	/**
