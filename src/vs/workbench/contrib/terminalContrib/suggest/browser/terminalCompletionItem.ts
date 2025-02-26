@@ -53,7 +53,7 @@ export class TerminalCompletionItem extends SimpleCompletionItem {
 	labelLowExcludeFileExt: string;
 
 	/**
-	 * The lowercase label, when the completion is a file or directory this has  normalized path
+	 * The lowercase label, when the completion is a file or directory this has normalized path
 	 * separators (/) on Windows and no trailing separator for directories.
 	 */
 	labelLowNormalizedPath: string;
@@ -77,10 +77,14 @@ export class TerminalCompletionItem extends SimpleCompletionItem {
 		this.labelLowExcludeFileExt = this.labelLow;
 		this.labelLowNormalizedPath = this.labelLow;
 
+		// On Windows we want to ensure path separators are normalized so the user can use `\` or
+		// interchangeably so we normalize the path here. Note that this means filtering with `/` or
+		// `\` will match both on Windows regardless of the completion kind.
+		if (isWindows) {
+			this.labelLow = this.labelLow.replaceAll('/', '\\');
+		}
+
 		if (isFile(completion)) {
-			if (isWindows) {
-				this.labelLow = this.labelLow.replaceAll('/', '\\');
-			}
 			// Don't include dotfiles as extensions when sorting
 			const extIndex = this.labelLow.lastIndexOf('.');
 			if (extIndex > 0) {
